@@ -18,7 +18,10 @@ router = APIRouter()
 @router.post("/otp-registration")
 def request_otp(user_data: CreateUser, session: SessionDep):
 
-    if not user_data.email.endswith("@itspe.co.in"):
+    # if not user_data.email.endswith("@itspe.co.in"):
+    #     raise HTTPException(400, "Company email required")
+
+    if not user_data.email.endswith("@gmail.com"):
         raise HTTPException(400, "Company email required")
 
     existing_user = session.exec(

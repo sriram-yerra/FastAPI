@@ -3,18 +3,15 @@ from sqlmodel import SQLModel, create_engine, Session, select, delete
 from typing import Annotated, Optional
 from ultralytics import YOLO
 import cv2, numpy as np, os
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestFormStrict
 from app.models.user_model import User, EmailOTP
 from app.models.product_model import Detections
 from app.dependancies import get_current_user, SessionDep
 from app.schemas.user_schema import CreateUser, OTPVerify, UpdateUser, loginUser, UserRead, Token
 from app.auth import hash_password, verified_password, create_acess_token
 import random, os
-import smtplib
 from fastapi.responses import JSONResponse, FileResponse
 import time
 from email.message import EmailMessage
-from datetime import datetime, timedelta, timezone
 from app.emailverfication import send_otp_email, generate_otp
 
 router = APIRouter()
@@ -22,22 +19,20 @@ router = APIRouter()
 app = FastAPI(title="AI Vision API")
 
 BASE_DIR = os.path.dirname(
-            os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(os.path.abspath(__file__))
-                )
-            )
-          )
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        )
+    )
+)
 
 MODEL_PATH = os.path.join(BASE_DIR, "weights", "combined_best.pt")
-IMG_SAVE_DIR = os.path.join(BASE_DIR, "storage/images")
-VID_SAVE_DIR = os.path.join(BASE_DIR, "storage/videos")
 
-if not IMG_SAVE_DIR:
-    os.makedirs(IMG_SAVE_DIR, exist_ok=True)
+IMG_SAVE_DIR = os.path.join(BASE_DIR, "storage", "images")
+VID_SAVE_DIR = os.path.join(BASE_DIR, "storage", "videos")
 
-if not VID_SAVE_DIR:
-    os.makedirs(VID_SAVE_DIR, exist_ok=True)
+os.makedirs(IMG_SAVE_DIR, exist_ok=True)
+os.makedirs(VID_SAVE_DIR, exist_ok=True)
 
 model = YOLO(MODEL_PATH)
 
@@ -64,12 +59,17 @@ def detect_image(image_bytes):
     return annotated, metadata
 
 def save_image(image, file_name):
-    filename = f"{file_name}_result.jpg"
+    name, ext = os.path.splitext(file_name)
+    filename = f"{name}_result.jpg"
     filepath = os.path.join(IMG_SAVE_DIR, filename)
     cv2.imwrite(filepath, image)
     return filename, filepath   # return only filename
 
 IMG_EXT = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".svg"]
+
+@router.get("/view-image")
+def view_image(path: str):
+    return FileResponse(path, media_type="image/jpeg")
 
 @router.post("/detect-image")
 async def detect(
@@ -116,8 +116,8 @@ async def detect(
 @router.get("/detections")
 def get_detections(
     session: SessionDep, 
-    file_name: Optional[int] = None, 
-    file_id: Optional[str] = None
+    file_name: Optional[str] = None, 
+    file_id: Optional[int] = None
     ):
     if file_id is not None:
         record = session.get(Detections, file_id)
@@ -138,7 +138,7 @@ def download_file(
     session: SessionDep,
     file_name: str | None = Query(None),
     file_id: int | None = Query(None),
-    current_user: User = Depends(get_current_user)  # optional but recommended
+    # current_user: User = Depends(get_current_user)  # optional but recommended
     ):
     if not file_name and not file_id:
         raise HTTPException(status_code=400, detail="Provide file_id or file_name")
@@ -203,3 +203,18 @@ def delete_by_id(
     session.commit()
 
     return {"message": f"Detection {file_id} deleted"}
+
+@router.get("/detections-history")
+def detections_history(session: SessionDep):
+    records = session.exec(select(Detections).order_by(Detections.id.desc())).all()
+
+    return [
+        {
+            "id": r.id,
+            "filename": r.filename,
+            "filepath": r.filepath,
+            "num_detections": r.num_detections,
+            "timestamp": r.timestamp,
+        }
+        for r in records
+    ]

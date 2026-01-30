@@ -1,12 +1,2 @@
 # Environment secrets
 .env
-
-# Database files
-*.db
-*.sqlite3
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
