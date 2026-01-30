@@ -7,7 +7,6 @@ from typing import Annotated, Optional
 class CreateUser(SQLModel):
     name: str
     email: EmailStr
-    # password: str
     password: str = Field(min_length=1, max_length=72)
 
 class UpdateUser(SQLModel):
@@ -29,7 +28,5 @@ class Token(SQLModel):
     token_type: str
 
 class OTPVerify(SQLModel):
-    email: str
+    email: EmailStr
     otp: str
-    name: str
-    password: str

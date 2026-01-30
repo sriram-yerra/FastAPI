@@ -19,6 +19,9 @@ class User(SQLModel, table=True):
 
 class EmailOTP(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    email: str
+    email: EmailStr = Field(index=True)
+    name: str
+    hashed_password: str
     otp: str
     expires_at: datetime
+
