@@ -12,21 +12,28 @@ if "token" not in st.session_state:
 if "pending_user" not in st.session_state:
     st.session_state.pending_user = None
 
-menu = st.sidebar.selectbox("Menu", ["Register", "Login", "Profile"])
+menu1 = st.sidebar.selectbox("Authentication:", ["Register", "Login"])
+menu2 = st.sidebar.selectbox("Testing:", ["Image Testing", "Video Testing", "Model Performance Analysis"])
 
-if menu == "Register":
+if menu1 == "Register":
     st.header("Company Registration")
 
     name = st.text_input("Name")
     email = st.text_input("Company Email")
     password = st.text_input("Password", type="password")
 
-    if st.button("Send OTP"):
-        res = requests.post(f"{API_URL}/request-otp", json={
+    if st.button("Request OTP"):
+        res = requests.post(f"{API_URL}/otp-registration", json={
             "name": name,
             "email": email,
             "password": password
         })
+
+        try:
+            data = res.json()
+        except:
+            st.error(res.text)
+            st.stop()
 
         if res.status_code == 200:
             st.success("OTP sent to your email (valid 2 mins)")
@@ -39,17 +46,24 @@ if menu == "Register":
             st.error(res.json()["detail"])
 
     if st.session_state.pending_user:
+        st.divider()
         st.subheader("Enter OTP")
 
         otp = st.text_input("OTP Code")
 
-        if st.button("Verify OTP"):
+        if st.button("Verify OTP and Register"):
             user_data = st.session_state.pending_user
 
-            res = requests.post(f"{API_URL}/verify-otp", json={
+            res = requests.post(f"{API_URL}/verify-otp-register", json={
                 "email": user_data["email"],
                 "otp": otp
             })
+
+            try:
+                data = res.json()
+            except:
+                st.error(res.text)
+                st.stop()
 
             if res.status_code == 200:
                 st.success("Registration Completed!")
@@ -57,9 +71,8 @@ if menu == "Register":
             else:
                 st.error(res.json()["detail"])
 
+elif menu1 == "Login":
 
-
-elif menu == "Login":
     st.header("Login")
 
     email = st.text_input("Email")
@@ -76,29 +89,13 @@ elif menu == "Login":
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
 
-        st.write(res.status_code)
-        st.write(res.text)
+        # st.write(res.status_code)
+        # st.write(res.text)
 
         if res.status_code == 200:
             token = res.json()["access_token"]
             st.session_state.token = token
             st.success("Logged in!")
+            st.balloons()
         else:
             st.error("Invalid credentials")
-
-
-elif menu == "Profile":
-    st.header("My Profile")
-
-    if not st.session_state.token:
-        st.warning("Login first")
-    else:
-        headers = {"Authorization": f"Bearer {st.session_state.token}"}
-        res = requests.get(f"{API_URL}/profile", headers=headers)
-
-        if res.status_code == 200:
-            data = res.json()
-            st.write("Name:", data["name"])
-            st.write("Email:", data["email"])
-        else:
-            st.error("Session expired. Login again.")
