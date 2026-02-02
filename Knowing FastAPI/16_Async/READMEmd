@@ -1,0 +1,177 @@
+# Async = Work smart while waiting, not idle
+
+## What is Asynchronous Programming?
+
+**Asynchronous (async)** is a programming concept where tasks can **start**, **run**, and **complete independently** — without each one waiting for the previous task to finish.
+
+---
+
+### Synchronous (Blocking)
+
+- Do **one task at a time**
+- Wait until it **finishes**
+- Then start the **next task**
+
+🧠 **Like standing in a queue** — you can't move until the person in front finishes.
+
+### Asynchronous (Non-Blocking)
+
+- Start a task
+- If it needs to **wait** (network, database, file, API call)
+- The program does **other work** instead of sitting idle
+
+🧠 **Like ordering food at a restaurant** — you place the order and chat with friends instead of staring at the kitchen.
+
+---
+
+## Why Async Exists
+
+Computers waste a lot of time **waiting** for:
+
+- Database responses
+- API calls
+- File reading/writing
+- Network communication
+
+**Async** lets the program **use that waiting time productively** instead of blocking / idling.
+
+---
+
+
+
+---
+
+# Async vs Multithreading vs Multiprocessing
+
+These are **three different ways** to handle multiple tasks in backend systems.
+
+---
+
+## 🟢 1. Asynchronous (Async / Event Loop)
+
+**Best for:** Waiting tasks (**I/O bound**)
+
+| Feature | Details |
+|---------|---------|
+| Runs on | **Single thread** |
+| Uses CPU cores | ❌ No |
+| Handles | Network, DB, APIs, file I/O |
+| Blocking? | ❌ Non-blocking |
+| How it works | Task pauses → event loop runs another |
+
+### Flow
+
+Task A (waiting for DB)  
+↓  
+Event Loop runs Task B  
+↓  
+Then Task C  
+
+### Example (FastAPI)
+
+```python
+@app.get("/")
+async def home():
+    data = await db_query()
+    return data
+```
+
+# Async vs Multithreading vs Multiprocessing  
+Three main ways to achieve **concurrency / parallelism** in backend systems
+
+| Aspect                  | Asynchronous (Async / Event Loop)          | Multithreading                             | Multiprocessing                            |
+|-------------------------|---------------------------------------------|--------------------------------------------|--------------------------------------------|
+| **Best for**            | **I/O-bound** tasks                         | **I/O-bound** (with some light CPU work)   | **CPU-bound** tasks                        |
+| **Runs on**             | Single thread                               | Multiple threads in one process            | Multiple independent processes             |
+| **Uses multiple CPU cores** | ❌ No                                     | Usually ⚠️ (GIL in CPython limits it)     | ✅ Yes                                      |
+| **Typical use cases**   | Web APIs, network calls, DB queries, file I/O, external services | Legacy code, some I/O-heavy apps, GUI apps | Heavy computation: ML training, image/video processing, simulations |
+| **Blocking?**           | Non-blocking                                | Can be blocking or non-blocking            | Independent — no shared blocking issue     |
+| **Memory usage**        | Very low                                    | Moderate (threads share memory)            | High (each process has its own memory)     |
+| **Context switching cost** | Very low                                 | Moderate                                   | High                                       |
+| **Python GIL impact**   | Almost none                                 | Severe limitation for CPU-bound work       | GIL is per-process → no global limitation  |
+| **Error isolation**     | Good (single process)                       | Risky (shared memory → segfaults, race conditions) | Excellent (processes are isolated)        |
+| **Debugging difficulty** | Medium                                     | Hard (race conditions, deadlocks)          | Easier (no shared state issues)            |
+| **Startup overhead**    | Very low                                    | Low                                        | High                                       |
+| **Communication**       | `await`, queues, events                     | Locks, queues, semaphores, conditions      | Queues (multiprocessing.Queue), Pipes, shared memory (careful!) |
+| **Popular libraries**   | asyncio, FastAPI, aiohttp, Starlette, Sanic | threading, concurrent.futures.ThreadPoolExecutor | multiprocessing, concurrent.futures.ProcessPoolExecutor, joblib, Ray |
+
+## Quick Summary Table – Which to choose?
+
+| Your workload is mostly...     | Recommended choice              | Python example libraries/tools                  |
+|--------------------------------|----------------------------------|-------------------------------------------------|
+| Waiting for network / DB / API | **Async** (usually best)        | FastAPI, asyncio, aiohttp, SQLAlchemy + asyncpg |
+| Mixed I/O + some CPU work      | **Async** or **ThreadPool**     | FastAPI + ThreadPoolExecutor for CPU parts      |
+| Heavy CPU computation          | **Multiprocessing**             | multiprocessing, ProcessPoolExecutor, Dask, Ray |
+| Legacy blocking code           | **ThreadPoolExecutor**          | concurrent.futures.ThreadPoolExecutor           |
+| Need both I/O + heavy CPU      | **Async + ProcessPool** hybrid  | FastAPI + ProcessPoolExecutor for slow tasks    |
+
+## 1. Asynchronous (Event Loop) – Example
+
+```python
+from fastapi import FastAPI
+import asyncio
+
+app = FastAPI()
+
+async def fetch_from_db():
+    await asyncio.sleep(1.2)  # simulate slow DB
+    return {"items": [1, 2, 3]}
+
+@app.get("/async")
+async def read_root():
+    data = await fetch_from_db()        # non-blocking
+    more = await fetch_from_db()        # runs concurrently
+    return {"message": "async is great", "data": data}
+```
+
+## 1. Multithreading – Example
+
+```python
+from fastapi import FastAPI
+from concurrent.futures import ThreadPoolExecutor
+import time
+
+app = FastAPI()
+executor = ThreadPoolExecutor(max_workers=10)
+
+def blocking_io_task(seconds):
+    time.sleep(seconds)  # simulates blocking I/O
+    return f"Done after {seconds}s"
+
+@app.get("/threads")
+def read_with_threads():
+    future1 = executor.submit(blocking_io_task, 2.5)
+    future2 = executor.submit(blocking_io_task, 1.8)
+    
+    return {
+        "result1": future1.result(),
+        "result2": future2.result()
+    }
+```
+
+## 1. Multiprocessing – Example
+
+```python
+from fastapi import FastAPI
+from concurrent.futures import ProcessPoolExecutor
+import time
+
+app = FastAPI()
+executor = ProcessPoolExecutor(max_workers=4)  # usually ≈ number of cores
+
+def cpu_heavy_task(n):
+    total = 0
+    for i in range(n):
+        total += i ** 2
+    return total
+
+@app.get("/processes")
+def read_with_processes():
+    future1 = executor.submit(cpu_heavy_task, 10_000_000)
+    future2 = executor.submit(cpu_heavy_task, 10_000_000)
+    
+    return {
+        "result1": future1.result(),
+        "result2": future2.result()
+    }
+```

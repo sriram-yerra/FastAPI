@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Registered Users</h2>
+        <a href="/" class="link"> Go to Register Page </a>
+
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if users_list %}
+                    {% for user in users_list %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phone }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4">No users registered yet</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        
+    </div>
+</body>
+</html>

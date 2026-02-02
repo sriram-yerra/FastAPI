@@ -1,7 +1,10 @@
 from fastapi import *
 from sqlmodel import *
 
-DATABASE_URL = "sqlite:///./users.db"
+# DATABASE_URL = "sqlite:///./users.db"
+# DATABASE_URL = "postgresql://fastapi_user:19705600@localhost:5432/fastapi_postgre"
+DATABASE_URL= "postgresql://fastapi_user:1234@localhost:5432/fastapi_db"
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 def create_tables_database():

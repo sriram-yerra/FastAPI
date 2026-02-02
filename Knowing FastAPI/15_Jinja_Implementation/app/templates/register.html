@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Register User</h2>  
+
+        <!-- Browser sends GET request → /users -->
+        <!-- So this link directly calls a backend route. -->
+        <a href="/users" class="link">Go to Users Page</a>
+
+        <!-- "post": Send data securely to server,  
+             "/register": Backend endpoint that receives it-->
+        <form method="post" action="/register" class="form-box">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" name="phone" required>
+            </div>
+
+            <button type="submit" class="btn">Register</button>
+        </form>
+
+    </div>
+</body>
+</html>

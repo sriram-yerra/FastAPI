@@ -22,7 +22,7 @@ def request_otp(user_data: CreateUser, session: SessionDep):
     #     raise HTTPException(400, "Company email required")
 
     if not user_data.email.endswith("@gmail.com"):
-        raise HTTPException(400, "Company email required")
+        raise HTTPException(400, "G-mail required")
 
     existing_user = session.exec(
         select(User).where(User.email == user_data.email)
