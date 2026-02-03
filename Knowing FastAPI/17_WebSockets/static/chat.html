@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Two User WebSocket Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #ace4ac; padding: 20px; }
+        #chat-box { border: 1px solid #cf8989; height: 300px; overflow-y: scroll; padding: 10px; background: #ebbce7; }
+        #message { width: 75%; padding: 10px; background: #ece68a}
+        #send { padding: 10px; }
+    </style>
+</head>
+<body>
+    <h2>FastAPI WebSocket Chat</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="message" placeholder="Type message..." />
+    <button id="send">Send</button>
+    <script>
+        // A new websocket will be automatically created when a new user enters, A user is created..! 
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        const chatBox = document.getElementById("chat-box");
+        const input = document.getElementById("message");
+        const send = document.getElementById("send");
+
+        //  ,Also when the msgs ar more, then the height of the chat should scrollup.
+        ws.onmessage = (event) => {
+            /*
+            onmessage → Event triggered when server sends data
+            event.data → The actual message text from the server
+            */
+            const msg = document.createElement("div"); // Creates a new HTML <div> element, This will hold one chat message
+            msg.textContent = event.data; // Inserts the message text inside the <div>
+            chatBox.appendChild(msg); // Adds the new message at the bottom of the chat area
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        // When clicked, the text is sent to websocket and the input place holder will be cleared
+        send.onclick = () => {
+            if (input.value.trim()) {
+                ws.send(input.value);
+                input.value = "";
+            }
+        };
+
+        // When Enter is pressed, then also click() will be triggered..!
+        input.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                send.click();
+            }
+        });
+    </script>
+</body>
+</html>
