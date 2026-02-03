@@ -69,10 +69,6 @@ async def download_images_NonBlocking():
                 img_response = await client.get(img_url, follow_redirects=True)
                 img_response.raise_for_status()
 
-                '''
-                Used for non-text data (images, videos, audio)
-                Python writes raw bytes into the file
-                '''
                 with open(f"{IMAGES_DIR}/non_blocking_img{i}.jpg", "wb") as f:
                     f.write(img_response.content)
 

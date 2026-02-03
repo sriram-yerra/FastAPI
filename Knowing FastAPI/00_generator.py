@@ -1,3 +1,5 @@
+from fastapi import FastAPI, HTTPExecption
+
 '''
 Normal Function
 def get_numbers():
