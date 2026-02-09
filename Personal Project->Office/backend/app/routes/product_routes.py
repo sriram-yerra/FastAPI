@@ -68,14 +68,18 @@ def save_image(image, file_name):
 IMG_EXT = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".svg"]
 
 @router.get("/view-image")
-def view_image(path: str):
+def view_image(
+    path: str,
+    current_user: User = Depends(get_current_user)
+    ):
     return FileResponse(path, media_type="image/jpeg")
 
 @router.post("/detect-image")
 async def detect(
     file: UploadFile = File(...), 
     custom_file_name: Optional[str] = Query(None), 
-    session: SessionDep = None
+    session: SessionDep = None,
+    current_user: User = Depends(get_current_user)
     ):
     image_bytes = await file.read()
 
@@ -138,7 +142,7 @@ def download_file(
     session: SessionDep,
     file_name: str | None = Query(None),
     file_id: int | None = Query(None),
-    # current_user: User = Depends(get_current_user)  # optional but recommended
+    current_user: User = Depends(get_current_user)  # optional but recommended
     ):
     if not file_name and not file_id:
         raise HTTPException(status_code=400, detail="Provide file_id or file_name")
@@ -166,7 +170,10 @@ def download_file(
 
 
 @router.delete("/detections/all")
-def delete_all_detections(session: SessionDep):
+def delete_all_detections(
+    session: SessionDep,
+    current_user: User = Depends(get_current_user)
+    ):
     records = session.exec(select(Detections)).all()
 
     for rec in records:
@@ -182,6 +189,7 @@ def delete_by_id(
     session: SessionDep,
     file_name: Optional[str] = None, 
     file_id: Optional[int] = None, 
+    current_user: User = Depends(get_current_user)
     ):
     if file_name is not None:
         query = select(Detections).where(Detections.filename == file_name)
@@ -205,7 +213,10 @@ def delete_by_id(
     return {"message": f"Detection {file_id} deleted"}
 
 @router.get("/detections-history")
-def detections_history(session: SessionDep):
+def detections_history(
+    session: SessionDep,
+    current_user: User = Depends(get_current_user)
+    ):
     records = session.exec(select(Detections).order_by(Detections.id.desc())).all()
 
     return [

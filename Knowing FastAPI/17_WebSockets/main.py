@@ -23,13 +23,16 @@ async def websocket_endpoint(websocket: WebSocket):
     # waiting for someone to open the chat, opce opened -> then accepted()
     await websocket.accept()
     clients.append(websocket)
+
     # check if client is live
     try:
         # if client is live then do this continously..!
         while True:
             data = await websocket.receive_text()
+
+            # send message to EVERYONE
             for client in clients:
-                await websocket.send_text(data)
+                await client.send_text(data)
 
     except WebSocketDisconnect:
         clients.remove(websocket)

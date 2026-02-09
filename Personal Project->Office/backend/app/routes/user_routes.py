@@ -83,13 +83,6 @@ def verify_otp_register(data: OTPVerify, session: SessionDep):
 
     return new_user
 
-@router.get("/users")
-def get_users(session: SessionDep):
-    users = session.exec(select(User)).all()
-    if not users:
-        raise HTTPException( status_code=401, detail="No users found..!")
-    return users
-
 @router.post("/login", response_model=Token)
 def login(
     session: SessionDep,
@@ -114,6 +107,13 @@ def login(
         "access_token": token, 
         "token_type": "bearer"
     }
+
+@router.get("/users")
+def get_users(session: SessionDep, user: Annotated[User, Depends(get_current_user)]):
+    users = session.exec(select(User)).all()
+    if not users:
+        raise HTTPException( status_code=401, detail="No users found..!")
+    return users
 
 @router.get("/profile")
 def profile(current_user: Annotated[User, Depends(get_current_user)]):
